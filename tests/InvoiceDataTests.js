@@ -18,7 +18,7 @@ describe('Invoices functionality', ()=>{
 
     it('user can select any month and get PDF invoice', async()=>{
         await page.loginWithCredentials('4338471', 'Aa123456');
-        const selectedOption = await page.selectInvoiceForDate();
+        const selectedOption = await page.selectInvoiceForDate('Mar 2019');
         expect(selectedOption).to.be.equal('Mar 2019');
         // Then we can check PDF invoices. But I didn't find any invoice for any year.
     });
