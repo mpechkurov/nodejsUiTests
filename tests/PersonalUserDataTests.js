@@ -1,5 +1,6 @@
 const {Builder, By, until} = require('selenium-webdriver');
 const { expect, assert } = require('chai');
+const Page = require('../lib/userDataPage');
 
 const loginPageUrl = 'https://www.car2go.com/auth/realms/c2gcustomer/protocol/openid-connect/auth?client_id=portal-client&redirect_uri=https%3A%2F%2Fwww.car2go.com%2FUS%2Fen%2Fmyaccount%2F&state=da2dc815-ba11-4af5-b625-4c093f257225&nonce=b7ac906c-35ad-45ee-a135-472c3f3b01bc&response_mode=fragment&response_type=code&scope=openid';
 
@@ -7,71 +8,56 @@ const loginPageUrl = 'https://www.car2go.com/auth/realms/c2gcustomer/protocol/op
 describe('Pesonal user data', ()=>{
     let driver;
     var currentDate;
+
     beforeEach(async function(){
         currentDate = new Date().getTime();
-        driver = new Builder().forBrowser('chrome').build();
-        await driver.get(loginPageUrl);
+        page = new Page();
+        driver = page.driver;
+        await page.visit(loginPageUrl);
+    });
+
+    afterEach (async () => {
+        await page.quit();
     });
 
     it('validate uset detail page personal information', async()=>{
-        await driver.findElement(By.name('username')).sendKeys('4338471');
-        await driver.findElement(By.name('password')).sendKeys('Aa123456');
-        await driver.findElement(By.name('login')).click();
-        await driver.wait(until.elementLocated(By.css('.c2g-my-details'))).click();
-        await driver.wait(until.elementLocated(By.id('name-address')));
+        await page.loginWithCredentials('4338471', 'Aa123456');
+        await page.openMyDetailsPage();
+        
+        const salutatationField = await page.getFieldByAttributeName('salutation');
+        expect(salutatationField.fieldTitle).to.be.equal('Salutation');
+        expect(salutatationField.fieldValue).to.be.equal('Mr.');
 
-        const salutatationField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "salutation")]//span')).getText();
-        expect(salutatationField).to.be.equal('Salutation');
-        const salutatation = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "salutation")]//p')).getText();
-        expect(salutatation).to.be.equal('Mr.');
+        const firstNameField = await page.getFieldByAttributeName('firstName');
+        expect(firstNameField.fieldTitle).to.be.equal('First name');
+        expect(firstNameField.fieldValue).to.be.equal('Nils');
 
-        const firstNameField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "firstName")]//span')).getText();
-        expect(firstNameField).to.be.equal('First name');
-        const firstName = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "firstName")]//p')).getText();
-        expect(firstName).to.be.equal('Nils');
+        const lastNameField = await page.getFieldByAttributeName('lastName');
+        expect(lastNameField.fieldTitle).to.be.equal('Last name');
+        expect(lastNameField.fieldValue).to.be.equal('Reißig');
 
-        const lastNameField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "lastName")]//span')).getText();
-        expect(lastNameField).to.be.equal('Last name');
-        const lastName = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "lastName")]//p')).getText();
-        expect(lastName).to.be.equal('Reißig');
+        const birthPlaceField = await page.getFieldByAttributeName('birthPlace');
+        expect(birthPlaceField.fieldTitle).to.be.equal('Birth place');
+        expect(birthPlaceField.fieldValue).to.contain('testBirthPlace');
 
-        const birthPlaceField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "birthPlace")]//span')).getText();
-        expect(birthPlaceField).to.be.equal('Birth place');
-        const birthPlace = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "birthPlace")]//p')).getText();
-        expect(birthPlace).to.contain('testBirthPlace');
+        const languageField = await page.getFieldByAttributeName('language');
+        expect(languageField.fieldTitle).to.be.equal('Language');
+        expect(languageField.fieldValue).to.be.equal('german');
 
-        const languageField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "language")]//span')).getText();
-        expect(languageField).to.be.equal('Language');
-        const language = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "language")]//p')).getText();
-        expect(language).to.be.equal('german');
-
-        const emailField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "email")]//span')).getText();
-        expect(emailField).to.be.equal('Email address');
-        const email = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "email")]//p')).getText();
-        expect(email).to.be.equal('nils.reissig+manuel@gmail.com');
+        const emailField = await page.getFieldByAttributeName('email');
+        expect(emailField.fieldTitle).to.be.equal('Email address');
+        expect(emailField.fieldValue).to.be.equal('nils.reissig+manuel@gmail.com');
     });
 
     it('check if user can change personal data for example bith date', async()=>{
-        await driver.findElement(By.name('username')).sendKeys('4338471');
-        await driver.findElement(By.name('password')).sendKeys('Aa123456');
-        await driver.findElement(By.name('login')).click();
-        await driver.wait(until.elementLocated(By.css('.c2g-my-details'))).click();
+        await page.loginWithCredentials('4338471', 'Aa123456');
+        await page.openMyDetailsPage();
+        await page.openEditForm();
+        await page.changeFieldById('birthPlace', 'testBirthPlace'+currentDate);
 
-        await driver.wait(until.elementLocated(By.css('.c2g-mydetails-edit-personaldata'))).click();
-        await driver.wait(until.elementLocated(By.css('.button--secondary')));
+        const birthPlaceField = await page.getFieldByAttributeName('birthPlace');
+        expect(birthPlaceField.fieldTitle).to.be.equal('Birth place');
+        expect(birthPlaceField.fieldValue).to.be.equal('testBirthPlace'+currentDate);        
 
-        await driver.findElement(By.id('birthPlace')).clear();
-        await driver.findElement(By.id('birthPlace')).sendKeys('testBirthPlace'+currentDate);
-        await driver.findElement(By.css('.button--primary')).click();
-        await driver.wait(until.elementLocated(By.css('.c2g-mydetails-edit-personaldata')));
-
-        const birthPlaceField = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "birthPlace")]//span')).getText();
-        expect(birthPlaceField).to.be.equal('Birth place');
-        const birthPlace = await driver.findElement(By.xpath('.//*[contains(@ng-hide, "birthPlace")]//p')).getText();
-        expect(birthPlace).to.be.equal('testBirthPlace'+currentDate);
     });
-
-
-    afterEach(function () { driver.quit(), 100});
-
 });
